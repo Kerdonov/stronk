@@ -1,0 +1,11 @@
+{
+  "name": "Flutter",
+  "image": "ghcr.io/thephaseless/devcontainers/flutter:latest",
+  "features": {
+    "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {}
+  },
+  "forwardPorts": [
+    5555
+  ],
+  "remoteUser": "root"
+}
