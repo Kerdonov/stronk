@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:stronk_app/services/db_service.dart';
 
-import 'home.dart';
+import 'pages/home.dart';
 
 void main() {
+  DatabaseService.instance;
   runApp(const MyApp());
 }
 

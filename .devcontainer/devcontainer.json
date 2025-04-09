@@ -1,6 +1,8 @@
 {
   "name": "Flutter",
-  "image": "ghcr.io/thephaseless/devcontainers/flutter:latest",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "features": {
     "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {}
   },
