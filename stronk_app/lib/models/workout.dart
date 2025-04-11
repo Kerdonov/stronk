@@ -1,7 +1,7 @@
 class Workout {
   final int id;
-  List<(num, int)> sets = List.empty();
+  List<(num, int)> sets;
   final String date;
 
-  Workout({required this.id, required this.date, required this.sets});
+  Workout({required this.id, required this.sets, required this.date});
 }

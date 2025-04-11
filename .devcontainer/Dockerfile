@@ -1,46 +1,57 @@
-FROM mcr.microsoft.com/devcontainers/base:debian
+FROM ubuntu:focal
 
-ARG USER=vscode
+# Set environment variables
+ENV ANDROID_SDK_ROOT=/usr/lib/android-sdk
 
-# Install linux dependencies
-RUN apt-get update &&\
-    apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev &&\
-    apt dist-upgrade -y
+ENV FLUTTER_SDK_ROOT=/usr/lib/flutter
+ENV FLUTTER_SDK_VERSION=3.29.2-stable
 
-# Get latest Android SDK
-ENV ANDROID_HOME=/opt/android-sdk-linux
-ENV ANDROID_SDK_ROOT=$ANDROID_HOME
-COPY --from=mobiledevops/android-sdk-image $ANDROID_HOME $ANDROID_HOME
-RUN mkdir $ANDROID_HOME/cmdline-tools/latest &&\
-    (cd $ANDROID_HOME/cmdline-tools && ls | grep -v latest | xargs mv -t latest)
-ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+# Include flutter and android tools in path
+ENV PATH="${PATH}:${FLUTTER_SDK_ROOT}/bin:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${ANDROID_SDK_ROOT}/emulator"
 
-# Get Android emulator
-RUN sdkmanager emulator
-ENV PATH="${ANDROID_HOME}/emulator/"
+# Enable noninteractive installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Get latest Java SDK
-ENV JAVA_HOME=/opt/java/openjdk
-COPY --from=eclipse-temurin:latest $JAVA_HOME $JAVA_HOME
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
+# Install dependencies and toolsDockerfile2
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y \
+    watchman \
+    openjdk-17-jdk \
+    android-sdk \
+    wget \
+    unzip \
+    zip \
+    curl \
+    git-all \
+    xz-utils \
+    libglu1-mesa \
+    libc6:amd64 libstdc++6:amd64 lib32z1 libbz2-1.0:amd64 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Get latest Flutter
-ENV FLUTTER_HOME=/usr/bin/flutter
-RUN mkdir -p $FLUTTER_HOME &&\
-    git clone -b stable https://github.com/flutter/flutter $FLUTTER_HOME
-ENV PATH="${FLUTTER_HOME}/bin:${PATH}"
-RUN chmod +x $FLUTTER_HOME/bin/flutter &&\
-    git config --global --add safe.directory '*' &&\
-    flutter precache
+# Add flutter to safe directory in git
+RUN git config --global --add safe.directory /usr/lib/flutter
 
-# Install flutter bash completion
-RUN chown 1000:1000 $FLUTTER_HOME -R &&\
-    chown 1000:1000 $JAVA_HOME -R &&\
-    chown 1000:1000 $ANDROID_HOME -R
-USER ${USER}
 
-# Source flutter bash completion
-RUN echo 'source <(flutter bash-completion)' >> ~/.bashrc &&\
-    sdkmanager --version &&\
-    java --version &&\
-    flutter doctor
+# Download and install Android Command Line Tools
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget -O commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip" && \
+    unzip commandlinetools.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest && \
+    rm commandlinetools.zip
+
+# Accept Android SDK licenses and install necessary components
+RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses && \
+    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;33.0.0"
+
+# Insall Flutter SDK
+RUN mkdir -p ${FLUTTER_SDK_ROOT} && \
+    cd ${FLUTTER_SDK_ROOT} && \
+    curl -OL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_SDK_VERSION}.tar.xz && \
+    tar -xf flutter_linux_${FLUTTER_SDK_VERSION}.tar.xz -C /usr/lib/ && \
+    rm -rf flutter_linux_${FLUTTER_SDK_VERSION}.tar.xz
+
+# Disable Flutter telemetry
+RUN flutter --disable-analytics
+
+# Default shell to bash
+SHELL ["/bin/bash", "-c"]

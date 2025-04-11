@@ -1,0 +1,2 @@
+/workspaces/stronk/stronk_app/android/app/.cxx/Debug/364i2z5f/x86/CMakeFiles/edit_cache.dir
+/workspaces/stronk/stronk_app/android/app/.cxx/Debug/364i2z5f/x86/CMakeFiles/rebuild_cache.dir

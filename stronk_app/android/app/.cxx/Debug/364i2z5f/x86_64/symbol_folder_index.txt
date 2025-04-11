@@ -1,0 +1,1 @@
+/workspaces/stronk/stronk_app/build/app/intermediates/cxx/Debug/364i2z5f/obj/x86_64

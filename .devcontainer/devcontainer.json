@@ -9,5 +9,20 @@
   "forwardPorts": [
     5555
   ],
-  "remoteUser": "root"
+  "runArgs": [
+    "--privileged",
+    "-v",
+    "/dev/bus/usb:/dev/bus/usb"
+  ],
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.flutter",
+        "Dart-Code.dart-code",
+        "alexcvzz.vscode-sqlite"
+      ]
+    }
+  },
+
 }

@@ -67,7 +67,6 @@ class DatabaseService {
   }
 
   Future<List<Workout>> getAllExerciseWorkouts(String exercise) async {
-    print("get all $exercise workouts");
     final db = await database;
     final data = await db.rawQuery('''
       SELECT w.id, w.day, s.weight, s.reps
@@ -76,16 +75,17 @@ class DatabaseService {
       JOIN Exercises e ON e.id=w.exercise_id
       WHERE e.name='$exercise';
     ''');
-    print(data.length);
     List<Workout> workouts = List.empty();
     int workoutIndex;
 
-    for (var s in data) {
+    for (Map<String, Object?> s in data) {
+      print(s);
       workoutIndex = workouts.indexWhere((w) => w.id == s['id'] as int);
+      print("index = $workoutIndex");
       if (workoutIndex != -1) {
         workouts[workoutIndex].sets.add((s['weight'] as num, s['reps'] as int));
       } else {
-        // this shit hangs
+        // this just hangs...????
         workouts.add(
           Workout(
             id: s['id'] as int,
