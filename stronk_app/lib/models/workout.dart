@@ -1,7 +1,7 @@
 class Workout {
   final int id;
   List<(num, int)> sets;
-  final String date;
+  final int timestamp;
 
-  Workout({required this.id, required this.sets, required this.date});
+  Workout({required this.id, required this.sets, required this.timestamp});
 }

@@ -69,7 +69,7 @@ class DatabaseService {
   Future<List<Workout>> getAllExerciseWorkouts(String exercise) async {
     final db = await database;
     final data = await db.rawQuery('''
-      SELECT w.id, w.day, s.weight, s.reps
+      SELECT w.id, w.timestamp, s.weight, s.reps
       FROM Sets s
       JOIN Workouts w ON w.id=s.workout_id
       JOIN Exercises e ON e.id=w.exercise_id
@@ -86,7 +86,7 @@ class DatabaseService {
         workouts.add(
           Workout(
             id: s['id'] as int,
-            date: s['day'] as String,
+            timestamp: s['timestamp'] as int,
             sets: List.from([(s['weight'] as num, s['reps'] as int)]),
           ),
         );
@@ -124,7 +124,7 @@ Future<void> createDatabase(Database db, int version) async {
     CREATE TABLE IF NOT EXISTS Workouts(
       id integer primary key NOT NULL UNIQUE,
       exercise_id INTEGER NOT NULL,
-      day TEXT NOT NULL,
+      timestamp integer NOT NULL,
     FOREIGN KEY(exercise_id) REFERENCES Exercises(id)
     );
   ''');
@@ -178,9 +178,11 @@ Future<void> createDatabase(Database db, int version) async {
   print(exerciseIds);
 
   for (int i in [1, 2, 3, 4, 5]) {
+    int timestamp =
+        (DateTime.parse("2025-04-0$i").millisecondsSinceEpoch / 1000).round();
     await db.execute('''
-      INSERT INTO Workouts(id, exercise_id, day)
-      VALUES($i, ${exerciseIds['Bench press']}, '0$i-04-2025');
+      INSERT INTO Workouts(id, exercise_id, timestamp)
+      VALUES($i, ${exerciseIds['Bench press']}, $timestamp);
     ''');
 
     for (var (r, w) in [(6, 35.0), (5, 35.0), (1, 40.0)]) {

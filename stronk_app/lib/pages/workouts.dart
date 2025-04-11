@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:stronk_app/models/workout.dart';
 import 'package:stronk_app/services/db_service.dart';
 
@@ -50,7 +51,13 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                   print("delete workout ${workout.id}");
                 },
                 child: ExpansionTile(
-                  title: Text(workout.date),
+                  title: Text(
+                    DateFormat("y MMM d HH:mm").format(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        (workout.timestamp * 1000),
+                      ),
+                    ),
+                  ),
                   subtitle: Text("${workout.sets.length.toString()} sets"),
                   expandedAlignment: Alignment.centerLeft,
                   childrenPadding: const EdgeInsets.symmetric(
