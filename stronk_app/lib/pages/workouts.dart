@@ -32,11 +32,34 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
             itemCount: snapshot.data?.length ?? 0,
             itemBuilder: (context, index) {
               Workout workout = snapshot.data![index];
-              return Row(
-                children: [
-                  Text(workout.date),
-                  Text(workout.sets.length.toString()),
-                ],
+              List<Widget> sets = List.from([]);
+              for (var (weight, reps) in workout.sets) {
+                String plural = reps == 1 ? "rep" : "reps";
+                sets.add(
+                  Row(
+                    children: [
+                      Expanded(child: Text("$weight kg")),
+                      Expanded(child: Text("$reps $plural")),
+                    ],
+                  ),
+                );
+              }
+              return GestureDetector(
+                onLongPress: () {
+                  // TODO delete workout?
+                  print("delete workout ${workout.id}");
+                },
+                child: ExpansionTile(
+                  title: Text(workout.date),
+                  subtitle: Text("${workout.sets.length.toString()} sets"),
+                  expandedAlignment: Alignment.centerLeft,
+                  childrenPadding: const EdgeInsets.symmetric(
+                    vertical: 5.0,
+                    horizontal: 13.0,
+                  ),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                  children: sets,
+                ),
               );
             },
           ),

@@ -75,27 +75,23 @@ class DatabaseService {
       JOIN Exercises e ON e.id=w.exercise_id
       WHERE e.name='$exercise';
     ''');
-    List<Workout> workouts = List.empty();
+    List<Workout> workouts = List.from([]);
     int workoutIndex;
 
     for (Map<String, Object?> s in data) {
-      print(s);
       workoutIndex = workouts.indexWhere((w) => w.id == s['id'] as int);
-      print("index = $workoutIndex");
       if (workoutIndex != -1) {
         workouts[workoutIndex].sets.add((s['weight'] as num, s['reps'] as int));
       } else {
-        // this just hangs...????
         workouts.add(
           Workout(
             id: s['id'] as int,
             date: s['day'] as String,
-            sets: [(s['weight'] as num, s['reps'] as int)],
+            sets: List.from([(s['weight'] as num, s['reps'] as int)]),
           ),
         );
       }
     }
-    print("${workouts.length} oijoijoaijdsf");
     return workouts;
   }
 }
