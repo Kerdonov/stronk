@@ -94,6 +94,45 @@ class DatabaseService {
     }
     return workouts;
   }
+
+  // -----------
+  // SET METHODS
+  // -----------
+  void newGroup(String groupName) async {
+    RegExp exp = RegExp(r'^[A-Z][a-z]*$');
+    if (!exp.hasMatch(groupName)) {
+      throw "Must be capitalized with latin letters";
+    }
+    if (groupName.length > 16) {
+      throw "Cannot be more than 16 characters";
+    }
+    // Group name is suitable
+    final Database db = await database;
+    await db.rawInsert('''
+      INSERT INTO MuscleGroups(name)
+      VALUES('$groupName');
+    ''');
+  }
+
+  void newExercise(String groupName, String exerciseName) async {
+    if (exerciseName.length > 30) {
+      throw "Cannot be more than 30 characters";
+    }
+    // Exercise name is suitable
+    final Database db = await database;
+    final groupIdData = await db.rawQuery('''
+      SELECT id FROM MuscleGroups
+      WHERE name = '$groupName';
+    ''');
+    int groupId = groupIdData[0]['id'] as int;
+    print("Group $groupName id is $groupId");
+    print(
+      await db.rawInsert('''
+      INSERT INTO Exercises(name, mainTarget, secondaryTarget)
+      VALUES('$exerciseName', '$groupId', 'NULL');
+    '''),
+    );
+  }
 }
 
 // ----------------
@@ -138,20 +177,11 @@ Future<void> createDatabase(Database db, int version) async {
   // REMOVE AFTER TESTING
   // .........
 
-  for (var name in [
-    "Chest",
-    "Triceps",
-    "Biceps",
-    "Shoulders",
-    "Back",
-    "Glutes",
-    "Legs",
-    "Core",
-  ]) {
+  for (var name in ["Chest", "Triceps", "Biceps", "Shoulders"]) {
     await db.execute("INSERT INTO MuscleGroups(name) VALUES('$name');");
   }
 
-  Map<String, int> groupIds = Map();
+  Map<String, int> groupIds = {};
   final groupIdsData = await db.rawQuery("SELECT * FROM MuscleGroups");
   for (var q in groupIdsData) {
     groupIds.addAll({q['name'] as String: q['id'] as int});
@@ -167,15 +197,11 @@ Future<void> createDatabase(Database db, int version) async {
     ''');
   }
 
-  print(groupIds);
-
-  Map<String, int> exerciseIds = Map();
+  Map<String, int> exerciseIds = {};
   final exerciseIdsData = await db.rawQuery("SELECT * FROM Exercises");
   for (var q in exerciseIdsData) {
     exerciseIds.addAll({q['name'] as String: q['id'] as int});
   }
-
-  print(exerciseIds);
 
   for (int i in [1, 2, 3, 4, 5]) {
     int timestamp =
@@ -192,6 +218,4 @@ Future<void> createDatabase(Database db, int version) async {
       ''');
     }
   }
-
-  print(await db.rawQuery("SELECT * FROM Workouts"));
 }

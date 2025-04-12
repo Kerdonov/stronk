@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stronk_app/models/exercise.dart';
 import 'package:stronk_app/pages/workouts.dart';
 import 'package:stronk_app/services/db_service.dart';
+import 'package:stronk_app/widgetbuilders/dialog.dart';
 
 class ExercisePage extends StatefulWidget {
   final String groupName;
@@ -14,19 +15,45 @@ class ExercisePage extends StatefulWidget {
 
 class _ExercisePageState extends State<ExercisePage> {
   final DatabaseService _databaseService = DatabaseService.instance;
+  late Widget exerciseList;
+
+  @override
+  void initState() {
+    super.initState();
+    exerciseList = buildExerciseList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // leading: BackButton(onPressed: () => Navigator.pop(context)),
-        title: Text(widget.groupName),
+      appBar: AppBar(title: Text(widget.groupName)),
+      body: exerciseList,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showPostDialog(
+            context,
+            "New \"${widget.groupName}\" exercise",
+            "Exercise name",
+            (exerciseName) {
+              _databaseService.newExercise(widget.groupName, exerciseName);
+              setState(() {
+                exerciseList = buildExerciseList();
+              });
+            },
+            (name) {
+              if ((name ?? "").length > 30) {
+                return "Cannot be more than 30 characters";
+              }
+              return null;
+            },
+          );
+        },
+        child: const Text("+", style: TextStyle(fontSize: 20)),
       ),
-      body: exerciseList(),
     );
   }
 
-  Widget exerciseList() {
+  Widget buildExerciseList() {
     return FutureBuilder(
       future: _databaseService.getExercises(widget.groupName),
       builder:

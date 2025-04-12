@@ -21,7 +21,12 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.exercise)),
       body: workoutsList(),
-      floatingActionButton: FloatingActionButton(onPressed: () {}),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO new workout
+        },
+        child: const Text("+", style: TextStyle(fontSize: 20)),
+      ),
     );
   }
 
