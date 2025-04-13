@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:stronk_app/models/workout.dart';
+import 'package:stronk_app/pages/add_workout.dart';
 import 'package:stronk_app/services/db_service.dart';
+import 'package:stronk_app/widgets/confirm_dialog.dart';
+import 'package:stronk_app/widgets/set_widget.dart';
 
 class WorkoutsPage extends StatefulWidget {
   final String group;
@@ -23,9 +27,14 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
       body: workoutsList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO new workout
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddWorkout(exerciseName: widget.exercise),
+            ),
+          ).then((_) => setState(() {}));
         },
-        child: const Text("+", style: TextStyle(fontSize: 20)),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -39,21 +48,22 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
             itemBuilder: (context, index) {
               Workout workout = snapshot.data![index];
               List<Widget> sets = List.from([]);
+              int i = 1;
               for (var (weight, reps) in workout.sets) {
-                String plural = reps == 1 ? "rep" : "reps";
-                sets.add(
-                  Row(
-                    children: [
-                      Expanded(child: Text("$weight kg")),
-                      Expanded(child: Text("$reps $plural")),
-                    ],
-                  ),
-                );
+                sets.add(SetWidget(n: i++, weight: weight, reps: reps));
               }
+              final plural = workout.sets.length == 1 ? "set" : "sets";
               return GestureDetector(
                 onLongPress: () {
-                  // TODO delete workout?
-                  print("delete workout ${workout.id}");
+                  HapticFeedback.mediumImpact();
+                  showConfirmationDialog(context, "Delete workout?").then((
+                    confirm,
+                  ) {
+                    if (confirm ?? false) {
+                      _databaseService.removeWorkout(workout.id);
+                      setState(() {});
+                    }
+                  });
                 },
                 child: ExpansionTile(
                   title: Text(
@@ -63,11 +73,11 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                       ),
                     ),
                   ),
-                  subtitle: Text("${workout.sets.length.toString()} sets"),
+                  subtitle: Text("${workout.sets.length.toString()} $plural"),
                   expandedAlignment: Alignment.centerLeft,
                   childrenPadding: const EdgeInsets.symmetric(
                     vertical: 5.0,
-                    horizontal: 13.0,
+                    horizontal: 15.0,
                   ),
                   expandedCrossAxisAlignment: CrossAxisAlignment.start,
                   children: sets,

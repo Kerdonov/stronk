@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stronk_app/models/exercise.dart';
 import 'package:stronk_app/pages/workouts.dart';
 import 'package:stronk_app/services/db_service.dart';
-import 'package:stronk_app/widgetbuilders/dialog.dart';
+import 'package:stronk_app/widgets/post_dialog.dart';
 
 class ExercisePage extends StatefulWidget {
   final String groupName;
@@ -53,7 +53,7 @@ class _ExercisePageState extends State<ExercisePage> {
             },
           );
         },
-        child: const Text("+", style: TextStyle(fontSize: 20)),
+        child: const Icon(Icons.add),
       ),
     );
   }

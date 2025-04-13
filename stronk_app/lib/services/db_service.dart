@@ -17,11 +17,10 @@ class DatabaseService {
   }
 
   static Future<Database> _initDatabase() async {
-    print("init database");
     final databaseDirPath = await getDatabasesPath();
-    deleteDatabase(
-      join(databaseDirPath, "stronk_db.db"),
-    ); // remove after testing
+    // deleteDatabase(
+    //   join(databaseDirPath, "stronk_db.db"),
+    // ); // remove after testing
     final databasePath = join(databaseDirPath, "stronk_db.db");
     final database = await openDatabase(
       databasePath,
@@ -46,12 +45,15 @@ class DatabaseService {
 
   Future<List<Exercise>> getExercises(String target) async {
     final db = await database;
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
       SELECT e.id, e.name
       FROM Exercises e
       JOIN MuscleGroups g ON e.target=g.id
-      WHERE g.name='$target';
-    ''');
+      WHERE g.name=?;
+    ''',
+      [target],
+    );
     List<Exercise> exercises =
         data
             .map((e) => Exercise(id: e['id'] as int, name: e['name'] as String))
@@ -61,13 +63,16 @@ class DatabaseService {
 
   Future<List<Workout>> getAllExerciseWorkouts(String exercise) async {
     final db = await database;
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
       SELECT w.id, w.timestamp, s.weight, s.reps
       FROM Sets s
       JOIN Workouts w ON w.id=s.workout_id
       JOIN Exercises e ON e.id=w.exercise_id
-      WHERE e.name='$exercise';
-    ''');
+      WHERE e.name=?;
+    ''',
+      [exercise],
+    );
     List<Workout> workouts = List.from([]);
     int workoutIndex;
 
@@ -101,10 +106,13 @@ class DatabaseService {
     }
     // Group name is suitable
     final Database db = await database;
-    return await db.rawInsert('''
+    return await db.rawInsert(
+          '''
       INSERT INTO MuscleGroups(name)
-      VALUES('$groupName');
-    ''') !=
+      VALUES(?);
+    ''',
+          [groupName],
+        ) !=
         0;
   }
 
@@ -114,17 +122,90 @@ class DatabaseService {
     }
     // Exercise name is suitable
     final Database db = await database;
-    final groupIdData = await db.rawQuery('''
+    final groupIdData = await db.rawQuery(
+      '''
       SELECT id FROM MuscleGroups
-      WHERE name = '$groupName';
-    ''');
+      WHERE name = ?;
+    ''',
+      [groupName],
+    );
     int groupId = groupIdData[0]['id'] as int;
-    print("Group $groupName id is $groupId new exercise: $exerciseName");
-    return await db.rawInsert('''
+    return await db.rawInsert(
+          '''
       INSERT INTO Exercises(name, target)
-      VALUES('$exerciseName', $groupId);
-    ''') !=
+      VALUES(?, ?);
+    ''',
+          [exerciseName, groupId],
+        ) !=
         0;
+  }
+
+  Future<bool> newWorkout(String exercise, List<(num, int)> sets) async {
+    if (sets.isEmpty) {
+      return false;
+    }
+    final Database db = await database;
+    final exerciseIdData = await db.rawQuery(
+      '''
+      SELECT id FROM Exercises
+      WHERE name=?;
+    ''',
+      [exercise],
+    );
+    if (exerciseIdData.length != 1) {
+      return false;
+    }
+    // Can add new workout
+    int exerciseId = exerciseIdData[0]['id'] as int;
+    int timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+    try {
+      db.transaction((txn) async {
+        int workoutId = await txn.rawInsert(
+          '''
+          INSERT INTO Workouts (exercise_id, timestamp)
+          VALUES(?, ?);
+        ''',
+          [exerciseId, timestamp],
+        );
+        if (workoutId == 0) {
+          throw "Insert failed";
+        }
+        for (var (weight, reps) in sets) {
+          txn.rawInsert(
+            '''
+            INSERT INTO Sets (weight, reps, workout_id)
+            VALUES(?, ?, ?);
+          ''',
+            [weight, reps, workoutId],
+          );
+        }
+      });
+    } catch (e) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // --------------
+  // DELETE METHODS
+  // --------------
+  Future<bool> removeWorkout(int id) async {
+    final db = await database;
+    try {
+      db.transaction((txn) async {
+        txn.rawDelete(
+          '''
+          DELETE FROM Workouts
+          WHERE id = ?;
+        ''',
+          [id],
+        );
+      });
+    } catch (e) {
+      return false;
+    }
+    return true;
   }
 }
 
@@ -168,42 +249,51 @@ Future<void> createDatabase(Database db, int version) async {
   // REMOVE AFTER TESTING
   // .........
 
-  for (var name in ["Chest", "Triceps", "Biceps", "Shoulders"]) {
-    await db.execute("INSERT INTO MuscleGroups(name) VALUES('$name');");
-  }
+  // for (var name in ["Chest", "Triceps", "Biceps", "Shoulders"]) {
+  //   await db.rawInsert("INSERT INTO MuscleGroups(name) VALUES(?);", [name]);
+  // }
 
-  Map<String, int> groupIds = {};
-  final groupIdsData = await db.rawQuery("SELECT * FROM MuscleGroups");
-  for (var q in groupIdsData) {
-    groupIds.addAll({q['name'] as String: q['id'] as int});
-  }
+  // Map<String, int> groupIds = {};
+  // final groupIdsData = await db.rawQuery("SELECT * FROM MuscleGroups");
+  // for (var q in groupIdsData) {
+  //   groupIds.addAll({q['name'] as String: q['id'] as int});
+  // }
 
-  for (var exercise in ["Bench press", "Chest press machine"]) {
-    await db.execute('''
-      INSERT INTO Exercises(name, target)
-      VALUES('$exercise', ${groupIds['Chest']});
-    ''');
-  }
+  // for (var exercise in ["Bench press", "Chest press machine"]) {
+  //   await db.rawInsert(
+  //     '''
+  //     INSERT INTO Exercises(name, target)
+  //     VALUES(?, ?);
+  //   ''',
+  //     [exercise, groupIds['Chest']],
+  //   );
+  // }
 
-  Map<String, int> exerciseIds = {};
-  final exerciseIdsData = await db.rawQuery("SELECT * FROM Exercises");
-  for (var q in exerciseIdsData) {
-    exerciseIds.addAll({q['name'] as String: q['id'] as int});
-  }
+  // Map<String, int> exerciseIds = {};
+  // final exerciseIdsData = await db.rawQuery("SELECT * FROM Exercises");
+  // for (var q in exerciseIdsData) {
+  //   exerciseIds.addAll({q['name'] as String: q['id'] as int});
+  // }
 
-  for (int i in [1, 2, 3, 4, 5]) {
-    int timestamp =
-        (DateTime.parse("2025-04-0$i").millisecondsSinceEpoch / 1000).round();
-    await db.execute('''
-      INSERT INTO Workouts(id, exercise_id, timestamp)
-      VALUES($i, ${exerciseIds['Bench press']}, $timestamp);
-    ''');
+  // for (int i in [1, 2, 3, 4, 5]) {
+  //   int timestamp =
+  //       (DateTime.parse("2025-04-0$i").millisecondsSinceEpoch / 1000).round();
+  //   await db.rawInsert(
+  //     '''
+  //     INSERT INTO Workouts(id, exercise_id, timestamp)
+  //     VALUES(?, ?, ?);
+  //   ''',
+  //     [i, exerciseIds['Bench press'], timestamp],
+  //   );
 
-    for (var (r, w) in [(6, 35.0), (5, 35.0), (1, 40.0)]) {
-      await db.execute('''
-        INSERT INTO Sets(weight, reps, workout_id)
-        VALUES($w, $r, $i);
-      ''');
-    }
-  }
+  //   for (var (r, w) in [(6, 35.0), (5, 35.0), (1, 40.0)]) {
+  //     await db.rawInsert(
+  //       '''
+  //       INSERT INTO Sets(weight, reps, workout_id)
+  //       VALUES(?, ?, ?);
+  //     ''',
+  //       [w, r, i],
+  //     );
+  //   }
+  // }
 }

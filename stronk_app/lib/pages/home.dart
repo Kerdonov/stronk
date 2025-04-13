@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stronk_app/models/group.dart';
 import 'package:stronk_app/pages/exercises.dart';
 import 'package:stronk_app/services/db_service.dart';
-import 'package:stronk_app/widgetbuilders/dialog.dart';
+import 'package:stronk_app/widgets/post_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> {
             },
           );
         },
-        child: const Text("+", style: TextStyle(fontSize: 20)),
+        child: const Icon(Icons.add),
       ),
     );
   }
