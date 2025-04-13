@@ -1,4 +1,4 @@
-package com.example.stronk_app
+package com.jluxdev.stronk_app
 
 import io.flutter.embedding.android.FlutterActivity
 

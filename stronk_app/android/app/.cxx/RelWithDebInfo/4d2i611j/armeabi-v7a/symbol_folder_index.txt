@@ -1,0 +1,1 @@
+/workspaces/stronk/stronk_app/build/app/intermediates/cxx/RelWithDebInfo/4d2i611j/obj/armeabi-v7a

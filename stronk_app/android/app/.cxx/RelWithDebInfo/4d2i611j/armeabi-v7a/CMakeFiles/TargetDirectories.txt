@@ -1,0 +1,2 @@
+/workspaces/stronk/stronk_app/android/app/.cxx/RelWithDebInfo/4d2i611j/armeabi-v7a/CMakeFiles/edit_cache.dir
+/workspaces/stronk/stronk_app/android/app/.cxx/RelWithDebInfo/4d2i611j/armeabi-v7a/CMakeFiles/rebuild_cache.dir
