@@ -44,24 +44,17 @@ class DatabaseService {
     return groups;
   }
 
-  Future<List<Exercise>> getExercises(String mainTarget) async {
+  Future<List<Exercise>> getExercises(String target) async {
     final db = await database;
     final data = await db.rawQuery('''
-      SELECT e.id, e.name, g2.name as "secTarget"
+      SELECT e.id, e.name
       FROM Exercises e
-      JOIN MuscleGroups g1 ON e.mainTarget=g1.id
-      JOIN MuscleGroups g2 ON e.secondaryTarget=g2.id
-      WHERE g1.name='$mainTarget';
+      JOIN MuscleGroups g ON e.target=g.id
+      WHERE g.name='$target';
     ''');
     List<Exercise> exercises =
         data
-            .map(
-              (e) => Exercise(
-                id: e['id'] as int,
-                name: e['name'] as String,
-                secondaryTarget: e['secTarget'] as String,
-              ),
-            )
+            .map((e) => Exercise(id: e['id'] as int, name: e['name'] as String))
             .toList();
     return exercises;
   }
@@ -98,7 +91,7 @@ class DatabaseService {
   // -----------
   // SET METHODS
   // -----------
-  void newGroup(String groupName) async {
+  Future<bool> newGroup(String groupName) async {
     RegExp exp = RegExp(r'^[A-Z][a-z]*$');
     if (!exp.hasMatch(groupName)) {
       throw "Must be capitalized with latin letters";
@@ -108,13 +101,14 @@ class DatabaseService {
     }
     // Group name is suitable
     final Database db = await database;
-    await db.rawInsert('''
+    return await db.rawInsert('''
       INSERT INTO MuscleGroups(name)
       VALUES('$groupName');
-    ''');
+    ''') !=
+        0;
   }
 
-  void newExercise(String groupName, String exerciseName) async {
+  Future<bool> newExercise(String groupName, String exerciseName) async {
     if (exerciseName.length > 30) {
       throw "Cannot be more than 30 characters";
     }
@@ -125,13 +119,12 @@ class DatabaseService {
       WHERE name = '$groupName';
     ''');
     int groupId = groupIdData[0]['id'] as int;
-    print("Group $groupName id is $groupId");
-    print(
-      await db.rawInsert('''
-      INSERT INTO Exercises(name, mainTarget, secondaryTarget)
-      VALUES('$exerciseName', '$groupId', 'NULL');
-    '''),
-    );
+    print("Group $groupName id is $groupId new exercise: $exerciseName");
+    return await db.rawInsert('''
+      INSERT INTO Exercises(name, target)
+      VALUES('$exerciseName', $groupId);
+    ''') !=
+        0;
   }
 }
 
@@ -143,11 +136,9 @@ Future<void> createDatabase(Database db, int version) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS Exercises(
       id integer primary key NOT NULL UNIQUE,
-      name TEXT NOT NULL UNIQUE,
-      mainTarget INTEGER NOT NULL,
-      secondaryTarget INTEGER,
-    FOREIGN KEY(mainTarget) REFERENCES MuscleGroups(id),
-    FOREIGN KEY(secondaryTarget) REFERENCES MuscleGroups(id)
+      name TEXT NOT NULL,
+      target INTEGER NOT NULL,
+    FOREIGN KEY(target) REFERENCES MuscleGroups(id)
     );
   ''');
   await db.execute('''
@@ -187,13 +178,10 @@ Future<void> createDatabase(Database db, int version) async {
     groupIds.addAll({q['name'] as String: q['id'] as int});
   }
 
-  for (var (exercise, sec) in [
-    ("Bench press", "Triceps"),
-    ("Chest press machine", "Shoulders"),
-  ]) {
+  for (var exercise in ["Bench press", "Chest press machine"]) {
     await db.execute('''
-      INSERT INTO Exercises(name, mainTarget, secondaryTarget)
-      VALUES('$exercise', ${groupIds['Chest']}, ${groupIds[sec]});
+      INSERT INTO Exercises(name, target)
+      VALUES('$exercise', ${groupIds['Chest']});
     ''');
   }
 

@@ -12,8 +12,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final fieldKey = GlobalKey<FormState>();
-
   final DatabaseService _databaseService = DatabaseService.instance;
   late Widget groupList;
 
@@ -35,9 +33,12 @@ class _HomePageState extends State<HomePage> {
             "New exercise group",
             "Group name",
             (groupName) {
-              _databaseService.newGroup(groupName);
-              setState(() {
-                groupList = buildGroupList();
+              _databaseService.newGroup(groupName).then((success) {
+                if (success) {
+                  setState(() {
+                    groupList = buildGroupList();
+                  });
+                }
               });
             },
             (name) {

@@ -35,10 +35,15 @@ class _ExercisePageState extends State<ExercisePage> {
             "New \"${widget.groupName}\" exercise",
             "Exercise name",
             (exerciseName) {
-              _databaseService.newExercise(widget.groupName, exerciseName);
-              setState(() {
-                exerciseList = buildExerciseList();
-              });
+              _databaseService.newExercise(widget.groupName, exerciseName).then(
+                (success) {
+                  if (success) {
+                    setState(() {
+                      exerciseList = buildExerciseList();
+                    });
+                  }
+                },
+              );
             },
             (name) {
               if ((name ?? "").length > 30) {

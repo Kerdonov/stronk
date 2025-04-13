@@ -12,7 +12,7 @@ void showPostDialog(
     builder:
         (BuildContext context) => StatefulBuilder(
           builder: (context, setState) {
-            final newGroupController = TextEditingController();
+            final inputController = TextEditingController();
             final fieldKey = GlobalKey<FormState>();
 
             return SimpleDialog(
@@ -23,7 +23,7 @@ void showPostDialog(
                   child: Form(
                     key: fieldKey,
                     child: TextFormField(
-                      controller: newGroupController,
+                      controller: inputController,
                       autofocus: true,
                       decoration: InputDecoration(
                         hintText: hint,
@@ -38,7 +38,7 @@ void showPostDialog(
                   child: const Text("Add"),
                   onPressed: () {
                     if (fieldKey.currentState!.validate()) {
-                      onSubmit(newGroupController.text);
+                      onSubmit(inputController.text);
                       Navigator.pop(context);
                     }
                   },
